@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, User, Lock, Sparkles } from "lucide-react"
 import ThemeToggle from "@/components/ui/ThemeToggle"
+import Image from "next/image"
+import logo from "@/public/logo.jpg"
 
 export default function LoginForm() {
   const [isLogin, setIsLogin] = useState(true)
@@ -66,12 +68,18 @@ export default function LoginForm() {
 
       <Card className="w-full max-w-md animate-fade-in-scale gradient-card border-0 shadow-2xl">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center animate-pulse-glow">
-            <Sparkles className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto w-16 h-16 bg-gradient-primary flex items-center justify-center animate-pulse-glow overflow-hidden">
+            <Image
+              src={logo}
+              alt="Logo"
+              width={40}
+              height={40}
+              className="object-contain"
+            />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              FinanceFlow
+            <CardTitle className="text-3xl font-bold text-primary">
+              Finanzas Medallo
             </CardTitle>
             <CardDescription className="text-muted-foreground">
               {isLogin ? "Accede a tu dashboard financiero" : "Crea tu cuenta para comenzar"}

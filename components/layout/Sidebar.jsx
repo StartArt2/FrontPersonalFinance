@@ -1,4 +1,5 @@
 "use client"
+
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,10 +13,12 @@ import {
   LogOut,
   X,
   Sparkles,
+  Database,
 } from "lucide-react"
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: Home },
+  { id: "datos", label: "Datos", icon: Database }, // Agregado nuevo botón Datos
   { id: "caja", label: "Caja", icon: Wallet },
   { id: "gastosFijos", label: "Gastos Fijos", icon: TrendingDown },
   { id: "gastosVariables", label: "Gastos Variables", icon: TrendingUp },

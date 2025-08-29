@@ -1,5 +1,3 @@
-// src/utils/dateUtils.js
-
 /**
  * Devuelve la fecha actual en formato YYYY-MM-DD (hora local, no UTC).
  */

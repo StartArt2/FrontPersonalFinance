@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { apiService } from "@/services/apiService"
-import { Plus, Edit, Trash2, DollarSign } from "lucide-react"
+import { Plus, Edit, Trash2, DollarSign, Eye } from "lucide-react"
 import LoadingSpinner from "@/components/ui/LoadingSpinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import RecordDetails from "@/components/data/RecordDetails"
 
 export default function AbonosManager() {
   const [abonos, setAbonos] = useState([])
@@ -18,6 +19,8 @@ export default function AbonosManager() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [selectedRecord, setSelectedRecord] = useState(null)
+  const [showDetails, setShowDetails] = useState(false)
   const [formData, setFormData] = useState({
     deuda_id: "",
     fecha: new Date().toISOString().split("T")[0],
@@ -92,6 +95,11 @@ export default function AbonosManager() {
     }
   }
 
+  const handleViewDetails = (abono) => {
+    setSelectedRecord({ ...abono, type: "abono" })
+    setShowDetails(true)
+  }
+
   const resetForm = () => {
     setFormData({
       deuda_id: "",
@@ -124,7 +132,8 @@ export default function AbonosManager() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Abonos</h1>
+          {/* Changed de bg-gradient-primary bg-clip-text text-transparent a text-primary para hacer el título visible */}
+          <h1 className="text-3xl font-bold text-primary">Abonos</h1>
           <p className="text-muted-foreground">Registra los pagos realizados a tus deudas</p>
         </div>
         <Button
@@ -283,6 +292,14 @@ export default function AbonosManager() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleViewDetails(abono)}
+                        className="hover:bg-accent/10 hover:text-accent"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleEdit(abono)}
                         className="hover:bg-primary/10 hover:text-primary"
                       >
@@ -304,6 +321,11 @@ export default function AbonosManager() {
           )
         })}
       </div>
+
+      {/* Modal de detalles del registro */}
+      {showDetails && selectedRecord && (
+        <RecordDetails record={selectedRecord} isOpen={showDetails} onClose={() => setShowDetails(false)} />
+      )}
 
       {abonos.length === 0 && deudas.length > 0 && (
         <Card className="gradient-card border-0 shadow-lg">

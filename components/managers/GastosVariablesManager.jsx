@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { apiService } from "@/services/apiService"
-import { Plus, Edit, Trash2, TrendingUp } from "lucide-react"
+import { Plus, Edit, Trash2, TrendingUp, Eye } from "lucide-react"
 import LoadingSpinner from "@/components/ui/LoadingSpinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { getTodayLocalISO } from "../../utils/dateUtils";
+import { getTodayLocalISO } from "../../utils/dateUtils"
+import RecordDetails from "@/components/data/RecordDetails"
 
 export default function GastosVariablesManager() {
   const [gastos, setGastos] = useState([])
@@ -25,6 +26,8 @@ export default function GastosVariablesManager() {
   })
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [selectedRecord, setSelectedRecord] = useState(null)
+  const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
     loadGastos()
@@ -70,14 +73,14 @@ export default function GastosVariablesManager() {
 
   const handleEdit = (gasto) => {
     setFormData({
-      fecha: getTodayLocalISO(), valor: gasto.valor.toString(),
+      fecha: getTodayLocalISO(),
+      valor: gasto.valor.toString(),
       detalle: gasto.detalle,
       destino: gasto.destino || "",
     })
     setEditingId(gasto._id)
     setShowForm(true)
   }
-
 
   const handleDelete = async (id) => {
     if (window.confirm("¿Estás seguro de eliminar este gasto variable?")) {
@@ -109,6 +112,11 @@ export default function GastosVariablesManager() {
     }))
   }
 
+  const handleViewDetails = (gasto) => {
+    setSelectedRecord({ ...gasto, type: "gastoVariable" })
+    setShowDetails(true)
+  }
+
   if (loading) {
     return <LoadingSpinner />
   }
@@ -118,7 +126,7 @@ export default function GastosVariablesManager() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Gastos Variables</h1>
+          <h1 className="text-3xl font-bold text-primary">Gastos Variables</h1>
           <p className="text-muted-foreground">Administra tus gastos variables ocasionales</p>
         </div>
         <Button
@@ -252,6 +260,14 @@ export default function GastosVariablesManager() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleViewDetails(gasto)}
+                      className="hover:bg-accent/10 hover:text-accent"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleEdit(gasto)}
                       className="hover:bg-primary/10 hover:text-primary"
                     >
@@ -272,6 +288,10 @@ export default function GastosVariablesManager() {
           </Card>
         ))}
       </div>
+
+      {showDetails && selectedRecord && (
+        <RecordDetails record={selectedRecord} isOpen={showDetails} onClose={() => setShowDetails(false)} />
+      )}
 
       {gastos.length === 0 && (
         <Card className="gradient-card border-0 shadow-lg">

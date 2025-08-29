@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -5,10 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { apiService } from "@/services/apiService"
-import { Plus, Edit, Trash2, TrendingDown } from "lucide-react"
+import { Plus, Edit, Trash2, TrendingDown, Eye } from "lucide-react"
 import LoadingSpinner from "@/components/ui/LoadingSpinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { getTodayLocalISO } from "../../utils/dateUtils";
+import { getTodayLocalISO } from "../../utils/dateUtils"
+import RecordDetails from "@/components/data/RecordDetails"
 
 export default function GastosFijosManager() {
   const [gastos, setGastos] = useState([])
@@ -23,6 +26,8 @@ export default function GastosFijosManager() {
   })
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [selectedRecord, setSelectedRecord] = useState(null)
+  const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
     loadGastos()
@@ -55,7 +60,7 @@ export default function GastosFijosManager() {
         setSuccess("Gasto fijo actualizado exitosamente")
       } else {
         await apiService.gastosFijos.create(gastoData)
-        console.log(gastoData);
+        console.log(gastoData)
         setSuccess("Gasto fijo creado exitosamente")
       }
 
@@ -107,6 +112,11 @@ export default function GastosFijosManager() {
     }))
   }
 
+  const handleViewDetails = (gasto) => {
+    setSelectedRecord({ ...gasto, type: "gastoFijo" })
+    setShowDetails(true)
+  }
+
   if (loading) {
     return <LoadingSpinner />
   }
@@ -116,7 +126,8 @@ export default function GastosFijosManager() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Gastos Fijos</h1>
+          {/* Changed from bg-gradient-primary bg-clip-text text-transparent to text-primary for making the title visible */}
+          <h1 className="text-3xl font-bold text-primary">Gastos Fijos</h1>
           <p className="text-muted-foreground">Administra tus gastos fijos mensuales</p>
         </div>
         <Button
@@ -250,6 +261,14 @@ export default function GastosFijosManager() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleViewDetails(gasto)}
+                      className="hover:bg-accent/10 hover:text-accent"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleEdit(gasto)}
                       className="hover:bg-primary/10 hover:text-primary"
                     >
@@ -270,6 +289,10 @@ export default function GastosFijosManager() {
           </Card>
         ))}
       </div>
+
+      {showDetails && selectedRecord && (
+        <RecordDetails record={selectedRecord} isOpen={showDetails} onClose={() => setShowDetails(false)} />
+      )}
 
       {gastos.length === 0 && (
         <Card className="gradient-card border-0 shadow-lg">

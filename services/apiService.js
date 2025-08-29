@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:4000/api"
+const API_BASE_URL = "https://81m5dl73-4000.use.devtunnels.ms/api"
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token")

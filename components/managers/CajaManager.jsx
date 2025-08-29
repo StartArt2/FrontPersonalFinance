@@ -6,20 +6,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { apiService } from "@/services/apiService"
-import { Plus, Calendar, DollarSign, TrendingUp, TrendingDown } from "lucide-react"
+import { Plus, Calendar, DollarSign, TrendingUp, TrendingDown, Eye } from "lucide-react"
 import LoadingSpinner from "@/components/ui/LoadingSpinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import RecordDetails from "@/components/data/RecordDetails"
 
 export default function CajaManager() {
   const [cajas, setCajas] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
-    fecha: new Date().toLocaleDateString("en-CA"), 
+    fecha: new Date().toLocaleDateString("en-CA"),
     ingresos_dia: "",
   })
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [selectedRecord, setSelectedRecord] = useState(null)
+  const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
     loadCajas()
@@ -64,6 +67,11 @@ export default function CajaManager() {
       ...prev,
       [e.target.name]: e.target.value,
     }))
+  }
+
+  const handleViewDetails = (caja) => {
+    setSelectedRecord({ ...caja, type: "caja" })
+    setShowDetails(true)
   }
 
   if (loading) {
@@ -207,12 +215,28 @@ export default function CajaManager() {
                       ${caja.saldo_dia.toLocaleString("es-ES")}
                     </div>
                   </div>
+
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDetails(caja)}
+                      className="hover:bg-accent/10 hover:text-accent"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Modal de detalles */}
+      {showDetails && selectedRecord && (
+        <RecordDetails record={selectedRecord} isOpen={showDetails} onClose={() => setShowDetails(false)} />
+      )}
 
       {cajas.length === 0 && (
         <Card className="gradient-card border-0 shadow-lg">

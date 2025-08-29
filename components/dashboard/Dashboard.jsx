@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import Sidebar from "@/components/layout/Sidebar"
 import Header from "@/components/layout/Header"
 import DashboardHome from "@/components/dashboard/DashboardHome"
+import DataExplorer from "@/components/data/DataExplorer" // Agregado import del DataExplorer
 import CajaManager from "@/components/managers/CajaManager"
 import GastosFijosManager from "@/components/managers/GastosFijosManager"
 import GastosVariablesManager from "@/components/managers/GastosVariablesManager"
@@ -14,6 +15,7 @@ import AbonosManager from "@/components/managers/AbonosManager"
 
 const PAGES = {
   dashboard: "dashboard",
+  datos: "datos", // Agregada página de datos
   caja: "caja",
   gastosFijos: "gastosFijos",
   gastosVariables: "gastosVariables",
@@ -31,6 +33,8 @@ export default function Dashboard() {
     switch (currentPage) {
       case PAGES.dashboard:
         return <DashboardHome />
+      case PAGES.datos: // Agregado caso para datos
+        return <DataExplorer />
       case PAGES.caja:
         return <CajaManager />
       case PAGES.gastosFijos:

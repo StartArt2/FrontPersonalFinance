@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { apiService } from "@/services/apiService"
-import { Plus, Edit, Trash2, CreditCard } from "lucide-react"
+import { Plus, Edit, Trash2, CreditCard, Eye } from "lucide-react"
 import LoadingSpinner from "@/components/ui/LoadingSpinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { getTodayLocalISO } from "../../utils/dateUtils";
+import { getTodayLocalISO } from "../../utils/dateUtils"
+import RecordDetails from "@/components/data/RecordDetails"
 
 export default function DeudasManager() {
   const [deudas, setDeudas] = useState([])
@@ -26,6 +27,8 @@ export default function DeudasManager() {
   })
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [selectedRecord, setSelectedRecord] = useState(null)
+  const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
     loadDeudas()
@@ -93,6 +96,11 @@ export default function DeudasManager() {
     }
   }
 
+  const handleViewDetails = (deuda) => {
+    setSelectedRecord({ ...deuda, type: "deuda" })
+    setShowDetails(true)
+  }
+
   const resetForm = () => {
     setFormData({
       detalle: "",
@@ -129,7 +137,7 @@ export default function DeudasManager() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Deudas</h1>
+          <h1 className="text-3xl font-bold text-primary">Deudas</h1>
           <p className="text-muted-foreground">Administra y controla tus deudas pendientes</p>
         </div>
         <Button
@@ -284,6 +292,14 @@ export default function DeudasManager() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleViewDetails(deuda)}
+                          className="hover:bg-accent/10 hover:text-accent"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleEdit(deuda)}
                           className="hover:bg-primary/10 hover:text-primary"
                         >
@@ -331,6 +347,10 @@ export default function DeudasManager() {
           )
         })}
       </div>
+
+      {showDetails && selectedRecord && (
+        <RecordDetails record={selectedRecord} isOpen={showDetails} onClose={() => setShowDetails(false)} />
+      )}
 
       {deudas.length === 0 && (
         <Card className="gradient-card border-0 shadow-lg">

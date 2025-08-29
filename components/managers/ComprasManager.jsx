@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { apiService } from "@/services/apiService"
-import { Plus, Edit, Trash2, ShoppingCart } from "lucide-react"
+import { Plus, Edit, Trash2, ShoppingCart, Eye } from "lucide-react"
 import LoadingSpinner from "@/components/ui/LoadingSpinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import RecordDetails from "@/components/data/RecordDetails"
 
 export default function ComprasManager() {
   const [compras, setCompras] = useState([])
@@ -24,6 +25,8 @@ export default function ComprasManager() {
   })
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [selectedRecord, setSelectedRecord] = useState(null)
+  const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
     loadCompras()
@@ -90,6 +93,11 @@ export default function ComprasManager() {
     }
   }
 
+  const handleViewDetails = (compra) => {
+    setSelectedRecord({ ...compra, type: "compra" })
+    setShowDetails(true)
+  }
+
   const resetForm = () => {
     setFormData({
       fecha: new Date().toISOString().split("T")[0],
@@ -117,7 +125,7 @@ export default function ComprasManager() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Compras</h1>
+          <h1 className="text-3xl font-bold text-primary">Compras</h1>
           <p className="text-muted-foreground">Registra y administra todas tus compras</p>
         </div>
         <Button
@@ -251,6 +259,14 @@ export default function ComprasManager() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleViewDetails(compra)}
+                      className="hover:bg-primary/10 hover:text-primary"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleEdit(compra)}
                       className="hover:bg-primary/10 hover:text-primary"
                     >
@@ -271,6 +287,11 @@ export default function ComprasManager() {
           </Card>
         ))}
       </div>
+
+      {/* Modal de detalles */}
+      {showDetails && selectedRecord && (
+        <RecordDetails record={selectedRecord} isOpen={showDetails} onClose={() => setShowDetails(false)} />
+      )}
 
       {compras.length === 0 && (
         <Card className="gradient-card border-0 shadow-lg">
