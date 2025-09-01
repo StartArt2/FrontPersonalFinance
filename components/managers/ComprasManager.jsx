@@ -11,6 +11,7 @@ import { Plus, Edit, Trash2, ShoppingCart, Eye } from "lucide-react"
 import LoadingSpinner from "@/components/ui/LoadingSpinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import RecordDetails from "@/components/data/RecordDetails"
+import MoneyInput from "@/components/ui/MoneyInput"
 
 export default function ComprasManager() {
   const [compras, setCompras] = useState([])
@@ -49,24 +50,33 @@ export default function ComprasManager() {
     setSuccess("")
 
     try {
+      const { fecha, valor, detalle, destino } = formData
+
+      console.log("[DEBUG fecha]", fecha)
+      const fechaFormateada = new Date(fecha).toISOString().split("T")[0]
       const compraData = {
-        ...formData,
-        valor: Number.parseFloat(formData.valor),
+        fecha: fechaFormateada,
+        valor: Number(valor),
+        detalle,
+        ...(destino ? { destino } : {}),
       }
+
+      console.log(">>> ENVIANDO:", JSON.stringify(compraData, null, 2))
 
       if (editingId) {
         await apiService.compras.update(editingId, compraData)
         setSuccess("Compra actualizada exitosamente")
       } else {
-        await apiService.compras.create(compraData)
-        console.log(compraData)
+        const result = await apiService.compras.create(compraData)
+        console.log("[v0] Compra creada:", result)
         setSuccess("Compra creada exitosamente")
       }
 
       resetForm()
-      loadCompras()
+      await loadCompras()
     } catch (error) {
-      setError(error.message)
+      console.error("[v0] Error creando compra:", error)
+      setError("Error al guardar la compra: " + (error.message || "Error desconocido"))
     }
   }
 
@@ -116,6 +126,13 @@ export default function ComprasManager() {
     }))
   }
 
+  const handleMoneyChange = (value) => {
+    setFormData((prev) => ({
+      ...prev,
+      valor: value,
+    }))
+  }
+
   if (loading) {
     return <LoadingSpinner />
   }
@@ -125,12 +142,14 @@ export default function ComprasManager() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-primary">Compras</h1>
+          <h1 className="text-3xl font-bold text-primary flex items-center gap-3">
+            🛒 <span>Compras</span>
+          </h1>
           <p className="text-muted-foreground">Registra y administra todas tus compras</p>
         </div>
         <Button
-          onClick={() => setShowForm(!showForm)}
-          className="gradient-primary hover:opacity-90 transition-all duration-300"
+          onClick={() => setShowForm(true)}
+          className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
         >
           <Plus className="w-4 h-4 mr-2" />
           Nueva Compra
@@ -150,109 +169,141 @@ export default function ComprasManager() {
         </Alert>
       )}
 
-      {/* Form */}
       {showForm && (
-        <Card className="gradient-card border-0 shadow-lg animate-fade-in-scale">
-          <CardHeader>
-            <CardTitle>{editingId ? "Editar" : "Nueva"} Compra</CardTitle>
-            <CardDescription>
-              {editingId ? "Modifica los datos de la compra" : "Ingresa los datos de la nueva compra"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-background to-muted/30 border-0 shadow-2xl animate-scale-in">
+            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-blue-600/10 border-b">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                🛒 <span>{editingId ? "Editar" : "Nueva"} Compra</span>
+              </CardTitle>
+              <CardDescription>
+                {editingId ? "Modifica los datos de la compra" : "Ingresa los datos de la nueva compra"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="fecha" className="text-sm font-medium">
+                      📅 Fecha
+                    </Label>
+                    <Input
+                      id="fecha"
+                      name="fecha"
+                      type="date"
+                      value={formData.fecha}
+                      onChange={handleChange}
+                      className="bg-background/50 border-border/50 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="valor" className="text-sm font-medium">
+                      💰 Valor
+                    </Label>
+                    <MoneyInput
+                      value={formData.valor}
+                      onChange={handleMoneyChange}
+                      placeholder="0"
+                      className="bg-background/50 border-border/50 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="fecha">Fecha</Label>
-                  <Input
-                    id="fecha"
-                    name="fecha"
-                    type="date"
-                    value={formData.fecha}
+                  <Label htmlFor="detalle" className="text-sm font-medium">
+                    📝 Detalle
+                  </Label>
+                  <Textarea
+                    id="detalle"
+                    name="detalle"
+                    placeholder="Descripción de la compra"
+                    value={formData.detalle}
                     onChange={handleChange}
-                    className="bg-input/50 border-border/50 focus:border-primary"
+                    className="bg-background/50 border-border/50 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300 min-h-[100px]"
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="valor">Valor</Label>
+                  <Label htmlFor="destino" className="text-sm font-medium">
+                    🏪 Destino (Opcional)
+                  </Label>
                   <Input
-                    id="valor"
-                    name="valor"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={formData.valor}
+                    id="destino"
+                    name="destino"
+                    placeholder="Ej: Supermercado, Tienda online, etc."
+                    value={formData.destino}
                     onChange={handleChange}
-                    className="bg-input/50 border-border/50 focus:border-primary"
-                    required
+                    className="bg-background/50 border-border/50 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="detalle">Detalle</Label>
-                <Textarea
-                  id="detalle"
-                  name="detalle"
-                  placeholder="Descripción de la compra"
-                  value={formData.detalle}
-                  onChange={handleChange}
-                  className="bg-input/50 border-border/50 focus:border-primary"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="destino">Destino (Opcional)</Label>
-                <Input
-                  id="destino"
-                  name="destino"
-                  placeholder="Ej: Supermercado, Tienda online, etc."
-                  value={formData.destino}
-                  onChange={handleChange}
-                  className="bg-input/50 border-border/50 focus:border-primary"
-                />
-              </div>
-
-              <div className="flex space-x-2">
-                <Button type="submit" className="gradient-primary">
-                  {editingId ? "Actualizar" : "Guardar"}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                <div className="flex space-x-3 pt-4">
+                  <Button
+                    type="submit"
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                  >
+                    {editingId ? "✅ Actualizar" : "💾 Guardar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetForm}
+                    className="flex-1 hover:bg-muted/50 transition-all duration-300 bg-transparent"
+                  >
+                    ❌ Cancelar
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      {/* Compras List */}
       <div className="grid gap-4">
         {compras.map((compra) => (
           <Card
             key={compra._id}
-            className="gradient-card border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+            className="bg-gradient-to-r from-background to-blue-50/30 dark:to-blue-950/20 border border-blue-200/50 dark:border-blue-800/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] hover:border-blue-300/70"
           >
             <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center">
-                    <ShoppingCart className="w-6 h-6 text-accent" />
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                <div className="flex items-center space-x-4 flex-1">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl flex items-center justify-center border border-blue-200/50">
+                    <ShoppingCart className="w-7 h-7 text-blue-600" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{compra.detalle}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(compra.fecha).toISOString().split("T")[0]}
-                      {compra.destino && ` • ${compra.destino}`}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-lg text-foreground break-words">{compra.detalle}</h3>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className="text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                        📅{" "}
+                        {new Date(compra.fecha).toLocaleDateString("es-ES", {
+                          weekday: "short",
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                      {compra.destino && (
+                        <span className="text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                          🏪 {compra.destino}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-between lg:justify-end space-x-4">
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-accent">${compra.valor.toLocaleString("es-ES")}</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {new Intl.NumberFormat("es-CO", {
+                        style: "currency",
+                        currency: "COP",
+                        minimumFractionDigits: 0,
+                      }).format(compra.valor)}
+                    </div>
                   </div>
 
                   <div className="flex space-x-2">
@@ -260,7 +311,7 @@ export default function ComprasManager() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleViewDetails(compra)}
-                      className="hover:bg-primary/10 hover:text-primary"
+                      className="hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all duration-300"
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
@@ -268,7 +319,7 @@ export default function ComprasManager() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEdit(compra)}
-                      className="hover:bg-primary/10 hover:text-primary"
+                      className="hover:bg-green-50 hover:text-green-600 hover:border-green-300 transition-all duration-300"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -276,7 +327,7 @@ export default function ComprasManager() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(compra._id)}
-                      className="hover:bg-destructive/10 hover:text-destructive"
+                      className="hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all duration-300"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

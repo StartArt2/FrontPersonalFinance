@@ -12,10 +12,13 @@ import GastosVariablesManager from "@/components/managers/GastosVariablesManager
 import ComprasManager from "@/components/managers/ComprasManager"
 import DeudasManager from "@/components/managers/DeudasManager"
 import AbonosManager from "@/components/managers/AbonosManager"
+import StatisticsPanel from "@/components/dashboard/StatisticsPanel"
+
 
 const PAGES = {
   dashboard: "dashboard",
   datos: "datos", // Agregada página de datos
+  statistics: "estadisticas",
   caja: "caja",
   gastosFijos: "gastosFijos",
   gastosVariables: "gastosVariables",
@@ -35,6 +38,8 @@ export default function Dashboard() {
         return <DashboardHome />
       case PAGES.datos: // Agregado caso para datos
         return <DataExplorer />
+      case PAGES.statistics:
+        return <StatisticsPanel />
       case PAGES.caja:
         return <CajaManager />
       case PAGES.gastosFijos:

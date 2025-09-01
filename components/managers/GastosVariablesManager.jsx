@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { apiService } from "@/services/apiService"
-import { Plus, Edit, Trash2, TrendingUp, Eye } from "lucide-react"
+import { Plus, Edit, Trash2, TrendingUp, Eye, X } from "lucide-react"
 import LoadingSpinner from "@/components/ui/LoadingSpinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { getTodayLocalISO } from "../../utils/dateUtils"
@@ -73,7 +73,7 @@ export default function GastosVariablesManager() {
 
   const handleEdit = (gasto) => {
     setFormData({
-      fecha: getTodayLocalISO(),
+      fecha: new Date(gasto.fecha).toISOString().split("T")[0],
       valor: gasto.valor.toString(),
       detalle: gasto.detalle,
       destino: gasto.destino || "",
@@ -126,12 +126,12 @@ export default function GastosVariablesManager() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-primary">Gastos Variables</h1>
+          <h1 className="text-3xl font-bold text-primary">🛒 Gastos Variables</h1>
           <p className="text-muted-foreground">Administra tus gastos variables ocasionales</p>
         </div>
         <Button
           onClick={() => setShowForm(!showForm)}
-          className="gradient-primary hover:opacity-90 transition-all duration-300"
+          className="gradient-primary hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
         >
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Gasto Variable
@@ -153,80 +153,113 @@ export default function GastosVariablesManager() {
 
       {/* Form */}
       {showForm && (
-        <Card className="gradient-card border-0 shadow-lg animate-fade-in-scale">
-          <CardHeader>
-            <CardTitle>{editingId ? "Editar" : "Nuevo"} Gasto Variable</CardTitle>
-            <CardDescription>
-              {editingId ? "Modifica los datos del gasto variable" : "Ingresa los datos del nuevo gasto variable"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto gradient-card border-0 shadow-2xl animate-scale-in">
+            <CardHeader className="pb-4 border-b border-border/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl font-bold text-primary">
+                    🛒 {editingId ? "Editar" : "Nuevo"} Gasto Variable
+                  </CardTitle>
+                  <CardDescription>
+                    {editingId ? "Modifica los datos del gasto variable" : "Registra un nuevo gasto variable ocasional"}
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowForm(false)}
+                  className="hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="fecha" className="text-sm font-medium">
+                      📅 Fecha
+                    </Label>
+                    <Input
+                      id="fecha"
+                      name="fecha"
+                      type="date"
+                      value={formData.fecha}
+                      onChange={handleChange}
+                      className="bg-input/50 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="valor" className="text-sm font-medium">
+                      💰 Valor
+                    </Label>
+                    <Input
+                      id="valor"
+                      name="valor"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.valor}
+                      onChange={handleChange}
+                      className="bg-input/50 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="fecha">Fecha</Label>
-                  <Input
-                    id="fecha"
-                    name="fecha"
-                    type="date"
-                    value={formData.fecha}
+                  <Label htmlFor="detalle" className="text-sm font-medium">
+                    📝 Detalle
+                  </Label>
+                  <Textarea
+                    id="detalle"
+                    name="detalle"
+                    placeholder="Descripción del gasto variable"
+                    value={formData.detalle}
                     onChange={handleChange}
-                    className="bg-input/50 border-border/50 focus:border-primary"
+                    className="bg-input/50 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="valor">Valor</Label>
+                  <Label htmlFor="destino" className="text-sm font-medium">
+                    🏢 Destino (Opcional)
+                  </Label>
                   <Input
-                    id="valor"
-                    name="valor"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={formData.valor}
+                    id="destino"
+                    name="destino"
+                    placeholder="Ej: Tienda, Restaurante, etc."
+                    value={formData.destino}
                     onChange={handleChange}
-                    className="bg-input/50 border-border/50 focus:border-primary"
-                    required
+                    className="bg-input/50 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="detalle">Detalle</Label>
-                <Textarea
-                  id="detalle"
-                  name="detalle"
-                  placeholder="Descripción del gasto variable"
-                  value={formData.detalle}
-                  onChange={handleChange}
-                  className="bg-input/50 border-border/50 focus:border-primary"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="destino">Destino (Opcional)</Label>
-                <Input
-                  id="destino"
-                  name="destino"
-                  placeholder="Ej: Tienda, Restaurante, etc."
-                  value={formData.destino}
-                  onChange={handleChange}
-                  className="bg-input/50 border-border/50 focus:border-primary"
-                />
-              </div>
-
-              <div className="flex space-x-2">
-                <Button type="submit" className="gradient-primary">
-                  {editingId ? "Actualizar" : "Guardar"}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-border/20">
+                  <Button
+                    type="submit"
+                    className="gradient-primary w-full sm:w-auto shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {editingId ? "Actualizar" : "Guardar"} Gasto Variable
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetForm}
+                    className="w-full sm:w-auto hover:bg-muted/50 bg-transparent"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Gastos List */}
@@ -243,17 +276,23 @@ export default function GastosVariablesManager() {
                     <TrendingUp className="w-6 h-6 text-secondary" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{gasto.detalle}</h3>
+                    <h3 className="font-semibold text-lg">🛒 {gasto.detalle}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(gasto.fecha).toISOString().split("T")[0]}
-                      {gasto.destino && ` • ${gasto.destino}`}
+                      📅 {new Date(gasto.fecha).toISOString().split("T")[0]}
+                      {gasto.destino && ` • 🏢 ${gasto.destino}`}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-secondary">${gasto.valor.toLocaleString("es-ES")}</div>
+                    <div className="text-2xl font-bold text-secondary">
+                      {new Intl.NumberFormat("es-CO", {
+                        style: "currency",
+                        currency: "COP",
+                        minimumFractionDigits: 0,
+                      }).format(gasto.valor)}
+                    </div>
                   </div>
 
                   <div className="flex space-x-2">
@@ -297,9 +336,12 @@ export default function GastosVariablesManager() {
         <Card className="gradient-card border-0 shadow-lg">
           <CardContent className="text-center py-12">
             <TrendingUp className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No hay gastos variables registrados</h3>
+            <h3 className="text-lg font-semibold mb-2">📝 No hay gastos variables registrados</h3>
             <p className="text-muted-foreground mb-4">Comienza agregando tus gastos variables ocasionales</p>
-            <Button onClick={() => setShowForm(true)} className="gradient-primary">
+            <Button
+              onClick={() => setShowForm(true)}
+              className="gradient-primary shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Crear Primer Gasto Variable
             </Button>

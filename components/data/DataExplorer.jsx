@@ -44,7 +44,7 @@ export default function DataExplorer() {
   const [totalAmount, setTotalAmount] = useState(0)
 
   const recordTypes = [
-    { key: "caja", label: "Caja", icon: Wallet, color: "bg-emerald-500" },
+    { key: "ingreso", label: "Ingresos", icon: Wallet, color: "bg-emerald-500" },
     { key: "compra", label: "Compras", icon: ShoppingCart, color: "bg-blue-500" },
     { key: "gastoFijo", label: "Gastos Fijos", icon: Receipt, color: "bg-red-500" },
     { key: "gastoVariable", label: "Gastos Variables", icon: TrendingUp, color: "bg-orange-500" },
@@ -60,10 +60,18 @@ export default function DataExplorer() {
     applyFilters()
   }, [allData, searchTerm, selectedTypes, dateRange])
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 0,
+    }).format(amount || 0)
+  }
+
   const loadAllData = async () => {
     try {
-      const [cajas, compras, gastosFijos, gastosVariables, deudas, abonos] = await Promise.all([
-        apiService.cajas.getAll(),
+      const [caja, compras, gastosFijos, gastosVariables, deudas, abonos] = await Promise.all([
+        apiService.caja.get(),
         apiService.compras.getAll(),
         apiService.gastosFijos.getAll(),
         apiService.gastosVariables.getAll(),
@@ -71,7 +79,6 @@ export default function DataExplorer() {
         apiService.abonos.getAll(),
       ])
 
-      // Organizar datos por fecha
       const organizedData = {}
       let recordCount = 0
       let totalValue = 0
@@ -91,11 +98,11 @@ export default function DataExplorer() {
           organizedData[year][month][day].push(record)
 
           recordCount++
-          totalValue += Number(item.valor || item.monto_total || item.ingresos_dia || 0)
+          totalValue += Number(item.valor || item.monto_total || 0)
         })
       }
 
-      addToOrganized(cajas, "caja")
+      addToOrganized(caja.ingresos || [], "ingreso")
       addToOrganized(compras, "compra")
       addToOrganized(gastosFijos, "gastoFijo")
       addToOrganized(gastosVariables, "gastoVariable")
@@ -115,7 +122,6 @@ export default function DataExplorer() {
   const applyFilters = () => {
     let filtered = { ...allData }
 
-    // Filtrar por tipos seleccionados
     if (selectedTypes.length > 0) {
       const newFiltered = {}
       Object.keys(filtered).forEach((year) => {
@@ -133,14 +139,19 @@ export default function DataExplorer() {
       filtered = newFiltered
     }
 
-    // Filtrar por término de búsqueda
     if (searchTerm) {
       const newFiltered = {}
       Object.keys(filtered).forEach((year) => {
         Object.keys(filtered[year]).forEach((month) => {
           Object.keys(filtered[year][month]).forEach((day) => {
             const dayRecords = filtered[year][month][day].filter((record) => {
-              const searchFields = [record.detalle, record.destino, record.descripcion, record.observaciones]
+              const searchFields = [
+                record.detalle,
+                record.destino,
+                record.descripcion,
+                record.observaciones,
+                record.origen,
+              ]
                 .filter(Boolean)
                 .join(" ")
                 .toLowerCase()
@@ -158,7 +169,6 @@ export default function DataExplorer() {
       filtered = newFiltered
     }
 
-    // Filtrar por rango de fechas
     if (dateRange.start || dateRange.end) {
       const newFiltered = {}
       const startDate = dateRange.start ? new Date(dateRange.start) : null
@@ -246,7 +256,7 @@ export default function DataExplorer() {
         Object.keys(filteredData[year][month]).forEach((day) => {
           filteredData[year][month][day].forEach((record) => {
             count++
-            total += Number(record.valor || record.monto_total || record.ingresos_dia || 0)
+            total += Number(record.valor || record.monto_total || 0)
           })
         })
       })
@@ -262,7 +272,7 @@ export default function DataExplorer() {
   const filteredStats = getFilteredStats()
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col space-y-4">
           <div className="text-center sm:text-left">
@@ -281,7 +291,7 @@ export default function DataExplorer() {
             <div className="text-center">
               <div className="text-xs sm:text-sm text-muted-foreground">Valor total</div>
               <div className="text-xl sm:text-2xl font-bold text-emerald-600 break-all">
-                ${filteredStats.total.toLocaleString("es-ES")}
+                {formatCurrency(filteredStats.total)}
               </div>
             </div>
           </div>
@@ -291,29 +301,12 @@ export default function DataExplorer() {
           <CardContent className="p-3 sm:p-4">
             <div className="flex flex-col space-y-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 sm:w-4 h-3 sm:h-4" />
                 <Input
                   placeholder="Buscar por detalle, destino, descripción..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-background/50 text-sm"
-                />
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Input
-                  type="date"
-                  placeholder="Fecha inicio"
-                  value={dateRange.start}
-                  onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
-                  className="bg-background/50 text-sm"
-                />
-                <Input
-                  type="date"
-                  placeholder="Fecha fin"
-                  value={dateRange.end}
-                  onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
-                  className="bg-background/50 text-sm"
+                  className="pl-8 sm:pl-10 bg-background/50 text-sm"
                 />
               </div>
 
@@ -323,7 +316,7 @@ export default function DataExplorer() {
                   onClick={() => setShowFilters(!showFilters)}
                   className="flex items-center justify-center gap-2 text-sm"
                 >
-                  <Filter className="w-4 h-4" />
+                  <Filter className="w-3 sm:w-4 h-3 sm:h-4" />
                   Filtros
                   {selectedTypes.length > 0 && (
                     <Badge variant="secondary" className="ml-1 text-xs">
@@ -338,14 +331,14 @@ export default function DataExplorer() {
                     onClick={clearFilters}
                     className="flex items-center justify-center gap-2 text-sm"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3 sm:w-4 h-3 sm:h-4" />
                     Limpiar
                   </Button>
                 )}
               </div>
 
               {showFilters && (
-                <div className="pt-4 border-t border-border/50">
+                <div className="pt-4 border-t border-border/50 space-y-4">
                   <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                     {recordTypes.map((type) => {
                       const Icon = type.icon
@@ -365,48 +358,55 @@ export default function DataExplorer() {
                       )
                     })}
                   </div>
+
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium text-muted-foreground">Filtrar por rango de fechas:</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Desde:</label>
+                        <Input
+                          type="date"
+                          placeholder="Fecha inicio"
+                          value={dateRange.start}
+                          onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
+                          className="bg-background/50 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Hasta:</label>
+                        <Input
+                          type="date"
+                          placeholder="Fecha fin"
+                          value={dateRange.end}
+                          onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
+                          className="bg-background/50 text-sm"
+                        />
+                      </div>
+                    </div>
+                    {(dateRange.start || dateRange.end) && (
+                      <div className="text-xs text-primary bg-primary/10 rounded-md p-2">
+                        📅 Mostrando registros{" "}
+                        {dateRange.start && `desde ${new Date(dateRange.start).toLocaleDateString("es-ES")}`}
+                        {dateRange.start && dateRange.end && " "}
+                        {dateRange.end && `hasta ${new Date(dateRange.end).toLocaleDateString("es-ES")}`}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
               <div className="flex flex-col space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">Filtrar por rango de fechas:</div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="flex-1">
-                    <label className="text-xs text-muted-foreground mb-1 block">Desde:</label>
-                    <Input
-                      type="date"
-                      placeholder="Fecha inicio"
-                      value={dateRange.start}
-                      onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
-                      className="bg-background/50 text-sm"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-xs text-muted-foreground mb-1 block">Hasta:</label>
-                    <Input
-                      type="date"
-                      placeholder="Fecha fin"
-                      value={dateRange.end}
-                      onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
-                      className="bg-background/50 text-sm"
-                    />
-                  </div>
+                <div className="text-sm font-medium text-muted-foreground">
+                  {filteredStats.count === totalRecords
+                    ? `Mostrando todos los ${totalRecords} registros`
+                    : `Mostrando ${filteredStats.count} de ${totalRecords} registros`}
                 </div>
-                {(dateRange.start || dateRange.end) && (
-                  <div className="text-xs text-primary bg-primary/10 rounded-md p-2">
-                    📅 Mostrando registros{" "}
-                    {dateRange.start && `desde ${new Date(dateRange.start).toLocaleDateString("es-ES")}`}
-                    {dateRange.start && dateRange.end && " "}
-                    {dateRange.end && `hasta ${new Date(dateRange.end).toLocaleDateString("es-ES")}`}
-                  </div>
-                )}
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Error Alert */}
       {error && (
         <Alert className="border-destructive/50 bg-destructive/10 animate-slide-in-up">
           <AlertDescription className="text-destructive">{error}</AlertDescription>
@@ -420,9 +420,7 @@ export default function DataExplorer() {
             <span>Registros por Fecha</span>
           </CardTitle>
           <CardDescription className="text-xs sm:text-sm">
-            {filteredStats.count === totalRecords
-              ? `Mostrando todos los ${totalRecords} registros`
-              : `Mostrando ${filteredStats.count} de ${totalRecords} registros`}
+            Explora tus registros organizados cronológicamente
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
@@ -470,10 +468,10 @@ export default function DataExplorer() {
                                 .map((day) => (
                                   <div
                                     key={day}
-                                    className="bg-muted/30 rounded-lg p-3 sm:p-4 border border-border/30 hover:shadow-md transition-all duration-200 space-y-3 sm:space-y-0"
+                                    className="bg-muted/30 rounded-lg p-3 sm:p-4 border border-border/30 hover:shadow-md transition-all duration-200 space-y-3"
                                   >
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 space-y-2 sm:space-y-0">
-                                      <h4 className="font-semibold text-base sm:text-lg flex items-center gap-2">
+                                      <h4 className="font-semibold text-sm sm:text-base flex items-center gap-2">
                                         🗓️ Día {day}
                                       </h4>
                                       <Badge variant="secondary" className="text-xs w-fit">
@@ -489,24 +487,29 @@ export default function DataExplorer() {
                                             key={index}
                                             className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-background/70 rounded-lg p-3 sm:p-4 border border-border/50 hover:shadow-md transition-all duration-200 space-y-3 sm:space-y-0"
                                           >
-                                            <div className="flex items-center space-x-3 min-w-0 flex-1">
+                                            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                                               <div
-                                                className={`w-8 sm:w-10 h-8 sm:h-10 ${typeConfig.color} rounded-full flex items-center justify-center flex-shrink-0`}
+                                                className={`w-6 sm:w-8 lg:w-10 h-6 sm:h-8 lg:h-10 ${typeConfig.color} rounded-full flex items-center justify-center flex-shrink-0`}
                                               >
-                                                <Icon className="w-4 sm:w-5 h-4 sm:h-5 text-white" />
+                                                <Icon className="w-3 sm:w-4 lg:w-5 h-3 sm:h-4 lg:h-5 text-white" />
                                               </div>
                                               <div className="flex-1 min-w-0">
-                                                <p className="font-semibold text-sm sm:text-base break-words">
+                                                <p className="font-semibold text-xs sm:text-sm lg:text-base break-words">
                                                   {record.detalle ||
                                                     record.destino ||
                                                     record.descripcion ||
-                                                    "Caja menor"}
+                                                    "Sin descripción"}
                                                 </p>
                                                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1">
                                                   <Badge variant="outline" className="text-xs w-fit">
                                                     {typeConfig.label}
                                                   </Badge>
-                                                  {record.destino && record.detalle && (
+                                                  {record.type === "ingreso" && record.origen && (
+                                                    <span className="text-xs text-muted-foreground break-words">
+                                                      • {record.origen}
+                                                    </span>
+                                                  )}
+                                                  {record.type !== "ingreso" && record.destino && record.detalle && (
                                                     <span className="text-xs text-muted-foreground break-words">
                                                       • {record.destino}
                                                     </span>
@@ -514,16 +517,10 @@ export default function DataExplorer() {
                                                 </div>
                                               </div>
                                             </div>
-                                            <div className="flex items-center justify-between sm:justify-end space-x-3">
+                                            <div className="flex items-center justify-between sm:justify-end space-x-2 sm:space-x-3">
                                               <div className="text-right">
-                                                <div className="text-lg sm:text-xl font-bold text-primary break-all">
-                                                  $
-                                                  {(
-                                                    record.valor ||
-                                                    record.monto_total ||
-                                                    record.ingresos_dia ||
-                                                    0
-                                                  ).toLocaleString("es-ES")}
+                                                <div className="text-sm sm:text-lg lg:text-xl font-bold text-primary break-all">
+                                                  {formatCurrency(record.valor || record.monto_total || 0)}
                                                 </div>
                                                 <div className="text-xs text-muted-foreground">
                                                   {new Date(record.fecha || record.fecha_inicio).toLocaleDateString(
@@ -535,9 +532,9 @@ export default function DataExplorer() {
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() => handleViewDetails(record)}
-                                                className="hover:bg-primary/10 hover:text-primary transition-colors flex-shrink-0"
+                                                className="hover:bg-primary/10 hover:text-primary transition-colors flex-shrink-0 h-6 sm:h-8 w-6 sm:w-8 p-0"
                                               >
-                                                <Eye className="w-4 h-4" />
+                                                <Eye className="w-3 sm:w-4 h-3 sm:h-4" />
                                               </Button>
                                             </div>
                                           </div>
@@ -556,18 +553,18 @@ export default function DataExplorer() {
             ))}
 
           {Object.keys(filteredData).length === 0 && (
-            <div className="text-center py-12">
-              <Database className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
+            <div className="text-center py-8 sm:py-12">
+              <Database className="w-12 sm:w-16 h-12 sm:h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold mb-2">
                 {Object.keys(allData).length === 0 ? "No hay datos disponibles" : "No se encontraron registros"}
               </h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 {Object.keys(allData).length === 0
                   ? "Comienza registrando transacciones en los diferentes módulos"
                   : "Intenta ajustar los filtros de búsqueda"}
               </p>
               {Object.keys(allData).length > 0 && (
-                <Button onClick={clearFilters} variant="outline">
+                <Button onClick={clearFilters} variant="outline" className="text-sm bg-transparent">
                   Limpiar filtros
                 </Button>
               )}
@@ -576,7 +573,6 @@ export default function DataExplorer() {
         </CardContent>
       </Card>
 
-      {/* Record Details Modal */}
       {showDetails && selectedRecord && (
         <RecordDetails record={selectedRecord} isOpen={showDetails} onClose={() => setShowDetails(false)} />
       )}

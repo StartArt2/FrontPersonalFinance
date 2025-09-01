@@ -12,6 +12,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { getTodayLocalISO } from "../../utils/dateUtils"
 import RecordDetails from "@/components/data/RecordDetails"
+import MoneyInput from "@/components/ui/MoneyInput"
 
 export default function GastosFijosManager() {
   const [gastos, setGastos] = useState([])
@@ -178,14 +179,12 @@ export default function GastosFijosManager() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="valor">Valor</Label>
-                  <Input
-                    id="valor"
-                    name="valor"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
+                  <MoneyInput
                     value={formData.valor}
-                    onChange={handleChange}
+                    onChange={(value) =>
+                      setFormData((prev) => ({ ...prev, valor: value }))
+                    }
+                    placeholder="0"
                     className="bg-input/50 border-border/50 focus:border-primary"
                     required
                   />

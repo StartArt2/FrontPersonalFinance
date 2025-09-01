@@ -14,10 +14,12 @@ import {
   X,
   Sparkles,
   Database,
+  BarChart3,
 } from "lucide-react"
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: Home },
+  { id: "estadisticas", label: "Estadísticas", icon: BarChart3 }, // Added statistics menu item
   { id: "datos", label: "Datos", icon: Database }, // Agregado nuevo botón Datos
   { id: "caja", label: "Caja", icon: Wallet },
   { id: "gastosFijos", label: "Gastos Fijos", icon: TrendingDown },

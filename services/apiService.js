@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://81m5dl73-4000.use.devtunnels.ms/api"
+const API_BASE_URL = "http://localhost:4000/api"
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token")
@@ -10,13 +10,25 @@ const getAuthHeaders = () => {
 
 const handleResponse = async (response) => {
   if (!response.ok) {
-    const error = await response.json()
+    // intenta parsear json de error si existe
+    let error = { message: "Error en la petición" }
+    try {
+      const body = await response.json()
+      error = body || error
+    } catch (e) {
+      // nada
+    }
     throw new Error(error.message || "Error en la petición")
   }
-  return response.json()
+  // Algunas respuestas pueden no tener body (204)
+  try {
+    return await response.json()
+  } catch {
+    return null
+  }
 }
 
-// Generic CRUD operations
+// Generic CRUD factory
 const createCRUDService = (endpoint) => ({
   async getAll() {
     const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
@@ -60,20 +72,46 @@ const createCRUDService = (endpoint) => ({
 })
 
 export const apiService = {
-  cajas: createCRUDService("cajas"),
+  caja: {
+    // Obtener la caja única
+    async get() {
+      const response = await fetch(`${API_BASE_URL}/caja`, {
+        headers: getAuthHeaders(),
+      });
+      return handleResponse(response);
+    },
+
+    // Agregar ingreso
+    async addIngreso(data) {
+      const response = await fetch(`${API_BASE_URL}/caja/ingresos`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(response);
+    },
+
+    // Listar ingresos con filtros opcionales
+    async listIngresos(params = {}) {
+      const qs = new URLSearchParams(params).toString();
+      const url = `${API_BASE_URL}/caja/ingresos${qs ? `?${qs}` : ""}`;
+      const response = await fetch(url, { headers: getAuthHeaders() });
+      return handleResponse(response);
+    },
+
+    // Eliminar ingreso
+    async deleteIngreso(id) {
+      const response = await fetch(`${API_BASE_URL}/caja/ingresos/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      return handleResponse(response);
+    }
+  },
+
   gastosFijos: createCRUDService("gastos-fijos"),
   gastosVariables: createCRUDService("gastos-variables"),
   compras: createCRUDService("compras"),
   deudas: createCRUDService("deudas"),
   abonos: createCRUDService("abonos"),
-
-  // Special method for caja creation/update
-  async createOrUpdateCaja(data) {
-    const response = await fetch(`${API_BASE_URL}/cajas`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    })
-    return handleResponse(response)
-  },
-}
+};
